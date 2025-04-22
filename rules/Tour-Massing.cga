@@ -1,0 +1,75 @@
+/**
+ * Author:  Esri R&D Center Zurich & Devin Lavigne, Houseal Lavigne Associates
+ */
+
+version "2024.0"
+
+
+###   CONSTANTS
+
+const unitScale = case Units=="Meters": 1 else: 0.304800	# If Meters the scale is 1, otherwise we convert to feet
+const Floor_Height = 3										# Floor heights are 3 meters (approximately 10 feet)
+
+
+###   ATTRIBUTES
+
+@Group("Global",1) @Order(1)
+@Description("The units for the selected shapes")
+@Enum("Feet","Meters")
+attr Units = "Meters"
+
+@Group("Building Attributes",2)
+@Description("The height of the building in the selected units")
+@Order(1)
+@Handle(shape=SplitFloors, align=left)
+@Range(min=0,max=200,stepsize=1)
+attr BuildingHeight = 30
+
+@Order(2)
+@Description("The land use designation for the building")
+@Enum("Multi-Family", "Office", "Commercial", "Mixed-Use", "Hotel", "Public", "None")
+attr LandUse = "None"
+
+@Group("Land Use Colors",10)
+@Color @Order(1)
+attr MultiFamily_Color	= "#A97C50"
+
+@Color @Order(2)
+attr Office_Color		= "#6699FF"
+
+@Color @Order(3)
+attr Commercial_Color	= "#FF6633"
+
+@Color @Order(4)
+attr MixedUse_Color		= "#77393A"
+
+@Color @Order(5)
+attr Hotel_Color		= "#FFCC33"
+
+@Color @Order(7)  
+attr Public_Color		= "#66FFFF"
+
+
+###   FUNCTIONS
+
+_getColor = 
+	case LandUse=="Multi-Family" : 	MultiFamily_Color
+	case LandUse=="Office" : 		Office_Color
+	case LandUse=="Commercial" : 	Commercial_Color	
+	case LandUse=="Mixed-Use" : 	MixedUse_Color
+	case LandUse=="Hotel" : 		Hotel_Color
+	case LandUse=="Public" : 		Public_Color
+	else: 							"#FFFFFF" # White
+
+
+
+### START RULE
+
+@StartRule
+Generate-->
+	color(_getColor)
+	extrude(BuildingHeight*unitScale)
+	SplitFloors
+	
+SplitFloors-->
+	split(y){~Floor_Height:Floor. | 0.75: NIL}*

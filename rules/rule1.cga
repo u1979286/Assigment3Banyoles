@@ -1,0 +1,183 @@
+version "2024.0"
+
+attr initialHeight = 9
+
+@Hidden
+attr Height = 
+	case initialHeight < 5 : 5
+	else : 2 + floorHeight * floor((initialHeight - 3) / floorHeight) + 1
+
+/*CONST-----------------------------------------------------------*/
+const text_paret_ground = "assets/textures/background-made-from-bricks.jpg"
+const text_paret = "assets/textures/maonsBlanc.jpg"
+const text_window_ground = "assets/textures/finestra.png"
+const text_window = "assets/textures/finestra2.png"
+
+const floorHeight = 2
+const tileWidth = 5
+const balconyWidth = 1.5
+
+
+@StartRule
+Lot -->
+    extrude(world.y, Height) Mass
+    Mass --> comp(f) {front : frontFacade | back : backFacade | left : leftside | right : rightside | top : roof}
+
+frontFacade --> 
+	split(y) {floorHeight : groundFloor("front") | {floorHeight : middleFloors("front")}* | floorHeight*0.5 : topFloor}
+backFacade --> 
+	split(y) {floorHeight : groundFloor("back") | {floorHeight : middleFloors("back")}* | floorHeight*0.5 : topFloor}
+leftside --> 
+	split(y) {floorHeight : groundFloor("left") | {floorHeight : middleFloors("left")}* | floorHeight*0.5 : topFloor}
+rightside --> 
+	split(y) {floorHeight : groundFloor("right") | {floorHeight : middleFloors("right")}* | floorHeight*0.5 : topFloor}
+
+roof --> color(0.2, 0.2, 0.2) extrude(world.y, 0.1)
+
+
+topFloor --> 
+	split(y) { floorHeight*0.1 : Wall(0) | floorHeight*0.03 : Wall(4) | floorHeight*0.1 : Wall(0) 
+			 | floorHeight*0.03 : Wall(4) | floorHeight*0.1 : Wall(0) | floorHeight*0.03 : Wall(4) | ~floorHeight*0.1 : Wall(0)}
+
+
+middleFloors(type) --> 
+	case type == "left" :
+		split(x) {{~0.3 : Wall(0) | tileWidth*1.4 : Tile(0) | ~0.3 : Wall(0) }*}
+	case type == "right" :
+		split(x) {{~0.3 : Wall(0) | tileWidth*0.6 : Tile(0) | 1.5 : Wall(0)  | tileWidth*0.6 : Tile(0) | ~0.3 : Wall(0) }*}
+	else :
+		split(x) {{~0.6: Wall(0) 
+				 | balconyWidth : Balcony
+				 | ~0.4 : Wall(0) 
+				 | tileWidth : Tile(0) 
+				 | ~0.4 : Wall(0) 
+				 | balconyWidth : Balcony 
+				 | ~0.4 : Wall(0)
+				 | tileWidth*0.6 : Tile(0)
+				 | ~0.6: Wall(0) 
+				 }*}
+
+	
+groundFloor(type) --> 
+			split(y) {floorHeight*0.9 : groundFloorBase(type) |floorHeight*0.1 : Wall(5)}
+
+groundFloorBase(type) --> 
+	case type == "left" :
+		split(x) {{~0.3 : Wall(1) | tileWidth*1.4 : Tile(1) | ~0.3 : Wall(1) }*}
+	case type == "right" :
+		split(y){~floorHeight*0.5 : Wall(1) | 
+				~floorHeight*0.5: split(x) {{ ~0.3 : Wall(1) 
+											|   1 : Window(1) | 1.45 : Wall(1) |  1 : Window(1) | 1.45 : Wall(1) 
+											|   1 : Window(1) | 1.45 : Wall(1) |  1 : Window(1) 
+											| ~0.3 : Wall(1)}*}	
+				}
+	else :
+		split(x) {{~0.6: Wall(1) 
+				 | balconyWidth : Window(2)
+				 | ~0.4 : Wall(1) 
+				 | floorHeight*0.5 : Window(3) | floorHeight*0.5 : Wall(1) | floorHeight*0.5 : Window(3) | floorHeight*0.5 : Wall(1) | floorHeight*0.5 : Window(3) 
+				 | ~0.4 : Wall(1) 
+				 | balconyWidth : Window(3) 
+				 | ~0.4 : Wall(1)
+				 | floorHeight*0.5 : Window(3) | floorHeight*0.5 : Wall(1) | floorHeight*0.5 : Window(3)
+				 | ~0.6: Wall(1) 
+				 }*}
+
+/*TILES---------------------------------------*/	
+Tile(XWall) --> 
+	split(y) {             0.7 : Wall(XWall)
+			 | floorHeight*0.5 : AreaWindow(XWall)
+			 |             0.3 : Wall(XWall) }
+
+/*BALCONY--------------------------------------*/	
+Balcony -->
+	Window(2)
+    Balcony2
+     
+Balcony2 -->
+	s('1, 2, 1)
+	i("builtin:cube")
+	split(y) {  1 : RailingBox
+			 |  0.8 : RailingBar
+			 | 0.2 : Wall(3)}
+
+RailingBox -->
+	comp(f) { front : Rail | left : Rail | right : Rail }
+
+Rail -->
+	s('1.1, '1, 0.1)
+	t(0, 0, -0.1)
+	center(x)
+	i("builtin:cube")
+	Wall(2)
+
+RailingBar -->
+	comp(f) { left : BarCorner2 | right : BarCorner }
+		 
+BarCorner -->
+	s(0.1, 0.8, 0.1)
+	t(0, 0, -0.1)
+	i("builtin:cube")	
+	Wall(2)
+
+BarCorner2 -->
+	s(0.1, 0.8, 0.1)
+	t(0.9, 0, -0.1)
+	i("builtin:cube")	
+	Wall(2)
+			 
+/*WINDOWS------------------------------------*/	 
+AreaWindow(x) --> 
+	split(x) { {floorHeight*0.5 : Window(x)
+			 | floorHeight*0.5 : Wall(2)}* }
+
+Window(x) -->
+    case x == 0: ApplyWindowTexture
+    case x == 1 : ApplyWindowGroundTexture
+    case x == 2 : ApplyWindowDoorDoubleTexture
+    else: ApplyWindowDoorTexture
+    
+
+/*WALLS-------------------------------------*/
+Wall(x) --> 
+	case x == 0: ApplyWallTexture
+	case x == 1: ApplyGroundTexture
+	case x == 2: color(0.1, 0.1, 0.1)
+	case x == 3: color(0.2, 0.2, 0.2)
+	case x == 4: color("#4c4338")
+	else: color(0.1, 0.1, 0.1)
+	
+/*TEXTURES---------------------------------*/
+ApplyWallTexture -->
+	color("#c9b8a3")
+    setupProjection(0, scope.xy, 2.25, 1.5, 0, 0, 1)
+    texture(text_paret)
+    projectUV(0)
+    
+ApplyGroundTexture -->
+	color("#402709")
+    setupProjection(0, scope.xy, 2.25, 1.5, 0.5, -0.2, 1)
+    texture(text_paret_ground)
+    projectUV(0)
+    
+ApplyWindowGroundTexture -->
+    setupProjection(0, scope.xy, 1, 0.9, 0, 0, 0.5)
+    texture(text_window_ground)
+    projectUV(0)
+    
+ApplyWindowTexture -->
+    setupProjection(0, scope.xy, 1, 1, 0, 0, 0.5)
+    texture(text_window)
+    projectUV(0)
+    
+ApplyWindowDoorDoubleTexture -->
+    setupProjection(0, scope.xy, 1.5, 1.85, 0, 0, 0.5)
+    texture(text_window)
+    projectUV(0)
+    
+ApplyWindowDoorTexture -->
+    setupProjection(0, scope.xy, 2.2, 1.85, -0.15, 0, 0.5)
+    texture(text_window)
+    projectUV(0)    
+    
+    
