@@ -1,5 +1,6 @@
 version "2024.0"
-
+@Enum(0,1)
+attr LOD = 1
 attr initialHeight = 9
 
 @Hidden
@@ -20,8 +21,13 @@ const balconyWidth = 1.5
 
 @StartRule
 Lot -->
-    extrude(world.y, Height) Mass
-    Mass --> comp(f) {front : frontFacade | back : backFacade | left : leftside | right : rightside | top : roof}
+    case LOD == 0:
+        color("#ffffff")        // bloc blanc
+        i("builtin:cube")       // forma de cub
+        s('1, Height, '1)       // escalar segons alçada
+    else:
+        extrude(world.y, Height) Mass
+        Mass --> comp(f) {front : frontFacade | back : backFacade | left : leftside | right : rightside | top : roof}
 
 frontFacade --> 
 	split(y) {floorHeight : groundFloor("front") | {floorHeight : middleFloors("front")}* | floorHeight*0.5 : topFloor}
