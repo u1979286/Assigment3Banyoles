@@ -22,9 +22,9 @@ const balconyWidth = 1.5
 @StartRule
 Lot -->
     case LOD == 0:
-        color("#ffffff")        // bloc blanc
-        i("builtin:cube")       // forma de cub
-        s('1, Height, '1)       // escalar segons alçada
+        color("#ffffff")
+        i("builtin:cube")
+        s('1, Height, '1)
     else:
         extrude(world.y, Height) Mass
         Mass --> comp(f) {front : frontFacade | back : backFacade | left : leftside | right : rightside | top : roof}
